@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подбор тренировок по ступеням ГТО</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .gto-badge {
+            transition: all 0.3s ease;
+        }
+        .gto-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #4f46e5 0%, #a855f7 50%, #ec4899 100%);
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Шапка -->
+    <header class="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-center items-center justify-between">
+                <div class="mb-6 md:mb-0">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-2">Готов к Труду и Обороне</h1>
+                    <p class="text-blue-100">Подбери идеальную тренировку для своей ступени ГТО</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Секция с параметрами -->
+        <section class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Выбери свои параметры</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Секция с выбором пола -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Пол</h3>
+                    <div class="flex space-x-4">
+                        <button id="male-btn" class="gender-btn flex-1 py-3 px-4 rounded-lg border-2 border-blue-100 bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 transition">
+                            <i class="fas fa-mars mr-2"></i> Мужской
+                        </button>
+                        <button id="female-btn" class="gender-btn flex-1 py-3 px-4 rounded-lg border-2 border-pink-100 bg-pink-50 text-pink-600 font-medium hover:bg-pink-100 transition">
+                            <i class="fas fa-venus mr-2"></i> Женский
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Возраст</h3>
+                    <div class="relative">
+                        <input type="number" id="age-input" min="6" max="70" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Введите возраст">
+                        <div class="absolute right-3 top-3 text-gray-400">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ступени ГТО -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Ступень ГТО</h3>
+                    <select id="gto-level" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                        <option value="" disabled selected>Выберите ступень</option>
+                        <option value="1">I ступень (6-8 лет)</option>
+                        <option value="2">II ступень (9-10 лет)</option>
+                        <option value="3">III ступень (11-12 лет)</option>
+                        <option value="4">IV ступень (13-15 лет)</option>
+                        <option value="5">V ступень (16-17 лет)</option>
+                        <option value="6">VI ступень (18-29 лет)</option>
+                        <option value="7">VII ступень (30-39 лет)</option>
+                        <option value="8">VIII ступень (40-49 лет)</option>
+                        <option value="9">IX ступень (50-59 лет)</option>
+                        <option value="10">X ступень (60-69 лет)</option>
+                        <option value="11">XI ступень (70+ лет)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <button id="generate-btn" class="w-full py-3 px-6  bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white font-semibold rounded-lg shadow-md hover:from-blue-600 hover:to-purple-700 transition transform hover:-translate-y-1">
+                    <i class="fas fa-dumbbell mr-2"></i> Подобрать тренировки
+                </button>
+            </div>
+        </section>
+        
+        <!-- Секция с результатами -->
+        <section id="results-section" class="hidden bg-white rounded-xl shadow-md p-6 mb-8 fade-in">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Рекомендуемые тренировки</h2>
+            
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-700 mb-2">Твоя ступень: <span id="result-level" class="font-bold text-blue-600"></span></h3>
+                <div class="flex items-center mb-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progress-bar" class="progress-bar h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text" class="ml-4 text-sm font-medium text-gray-500">0%</span>
+                </div>
+                <p id="result-description" class="text-gray-600"></p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="workouts-container">
+            </div>
+        </section>
+        
+
+        <section class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Ступени ГТО</h2>
+            <p class="text-gray-600 mb-6">Выбери свою ступень, чтобы увидеть рекомендуемые нормативы и тренировки для подготовки.</p>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Ступень 1 -->
+                <div class="gto-badge bg-blue-50 p-4 rounded-lg text-center cursor-pointer" data-level="1">
+                    <div class="bg-blue-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-blue-600 font-bold text-xl">I</span>
+                    </div>
+                    <h3 class="font-medium text-blue-800">6-8 лет</h3>
+                    <p class="text-xs text-blue-600">1 ступень</p>
+                </div>
+                
+                <!-- Ступень 2 -->
+                <div class="gto-badge bg-green-50 p-4 rounded-lg text-center cursor-pointer" data-level="2">
+                    <div class="bg-green-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-green-600 font-bold text-xl">II</span>
+                    </div>
+                    <h3 class="font-medium text-green-800">9-10 лет</h3>
+                    <p class="text-xs text-green-600">2 ступень</p>
+                </div>
+                
+                <!-- Ступень 3 -->
+                <div class="gto-badge bg-yellow-50 p-4 rounded-lg text-center cursor-pointer" data-level="3">
+                    <div class="bg-yellow-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-yellow-600 font-bold text-xl">III</span>
+                    </div>
+                    <h3 class="font-medium text-yellow-800">11-12 лет</h3>
+                    <p class="text-xs text-yellow-600">3 ступень</p>
+                </div>
+                
+                <!-- Ступень 4 -->
+                <div class="gto-badge bg-orange-50 p-4 rounded-lg text-center cursor-pointer" data-level="4">
+                    <div class="bg-orange-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-orange-600 font-bold text-xl">IV</span>
+                    </div>
+                    <h3 class="font-medium text-orange-800">13-15 лет</h3>
+                    <p class="text-xs text-orange-600">4 ступень</p>
+                </div>
+                
+                <!-- Ступень 5 -->
+                <div class="gto-badge bg-red-50 p-4 rounded-lg text-center cursor-pointer" data-level="5">
+                    <div class="bg-red-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-red-600 font-bold text-xl">V</span>
+                    </div>
+                    <h3 class="font-medium text-red-800">16-17 лет</h3>
+                    <p class="text-xs text-red-600">5 ступень</p>
+                </div>
+                
+                <!-- Ступень 6 -->
+                <div class="gto-badge bg-purple-50 p-4 rounded-lg text-center cursor-pointer" data-level="6">
+                    <div class="bg-purple-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3">
+                        <span class="text-purple-600 font-bold text-xl">VI</span>
+                    </div>
+                    <h3 class="font-medium text-purple-800">18-29 лет</h3>
+                    <p class="text-xs text-purple-600">6 ступень</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold mb-2">ГТО Тренировки</h3>
+                    <p class="text-gray-400">Подготовься к сдаче нормативов</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-vk text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-telegram text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
+                <p>© 2025 Все права защищены. Проект не является официальным сайтом ГТО.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const maleBtn = document.getElementById('male-btn');
+        const femaleBtn = document.getElementById('female-btn');
+        const ageInput = document.getElementById('age-input');
+        const gtoLevelSelect = document.getElementById('gto-level');
+        const generateBtn = document.getElementById('generate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const resultLevel = document.getElementById('result-level');
+        const resultDescription = document.getElementById('result-description');
+        const workoutsContainer = document.getElementById('workouts-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const gtoBadges = document.querySelectorAll('.gto-badge');
+        
+ 
+        let selectedGender = null;
+        let selectedAge = null;
+        let selectedLevel = null;
+        
+
+        maleBtn.addEventListener('click', () => {
+            selectedGender = 'male';
+            maleBtn.classList.add('bg-blue-100', 'border-blue-500');
+            femaleBtn.classList.remove('bg-pink-100', 'border-pink-500');
+        });
+        
+        femaleBtn.addEventListener('click', () => {
+            selectedGender = 'female';
+            femaleBtn.classList.add('bg-pink-100', 'border-pink-500');
+            maleBtn.classList.remove('bg-blue-100', 'border-blue-500');
+        });
+        
+        ageInput.addEventListener('input', () => {
+            selectedAge = parseInt(ageInput.value);
+            if (selectedAge) {
+                let level = getLevelByAge(selectedAge);
+                gtoLevelSelect.value = level;
+                selectedLevel = level;
+            }
+        });
+        
+        gtoLevelSelect.addEventListener('change', () => {
+            selectedLevel = gtoLevelSelect.value;
+        });
+        
+        generateBtn.addEventListener('click', generateWorkouts);
+        
+
+        gtoBadges.forEach(badge => {
+            badge.addEventListener('click', () => {
+                const level = badge.getAttribute('data-level');
+                gtoLevelSelect.value = level;
+                selectedLevel = level;
+                
+
+                const ageRange = getAgeRangeByLevel(level);
+                if (ageRange) {
+                    ageInput.value = ageRange.min;
+                    selectedAge = ageRange.min;
+                }
+                
+
+                document.querySelector('main').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        
+        // Функции
+        function getLevelByAge(age) {
+            if (age >= 6 && age <= 8) return '1';
+            if (age >= 9 && age <= 10) return '2';
+            if (age >= 11 && age <= 12) return '3';
+            if (age >= 13 && age <= 15) return '4';
+            if (age >= 16 && age <= 17) return '5';
+            if (age >= 18 && age <= 29) return '6';
+            if (age >= 30 && age <= 39) return '7';
+            if (age >= 40 && age <= 49) return '8';
+            if (age >= 50 && age <= 59) return '9';
+            if (age >= 60 && age <= 69) return '10';
+            if (age >= 70) return '11';
+            return '1';
+        }
+        
+        function getAgeRangeByLevel(level) {
+            switch(level) {
+                case '1': return { min: 6, max: 8 };
+                case '2': return { min: 9, max: 10 };
+                case '3': return { min: 11, max: 12 };
+                case '4': return { min: 13, max: 15 };
+                case '5': return { min: 16, max: 17 };
+                case '6': return { min: 18, max: 29 };
+                case '7': return { min: 30, max: 39 };
+                case '8': return { min: 40, max: 49 };
+                case '9': return { min: 50, max: 59 };
+                case '10': return { min: 60, max: 69 };
+                case '11': return { min: 70, max: 99 };
+                default: return null;
+            }
+        }
+        
+        function getLevelName(level) {
+            const levels = {
+                '1': 'I ступень (6-8 лет)',
+                '2': 'II ступень (9-10 лет)',
+                '3': 'III ступень (11-12 лет)',
+                '4': 'IV ступень (13-15 лет)',
+                '5': 'V ступень (16-17 лет)',
+                '6': 'VI ступень (18-29 лет)',
+                '7': 'VII ступень (30-39 лет)',
+                '8': 'VIII ступень (40-49 лет)',
+                '9': 'IX ступень (50-59 лет)',
+                '10': 'X ступень (60-69 лет)',
+                '11': 'XI ступень (70+ лет)'
+            };
+            return levels[level] || '';
+        }
+        
+        function getLevelDescription(level, gender) {
+            const descriptions = {
+                '1': 'Для самых юных участников программы ГТО. Основной акцент на развитие координации, гибкости и базовых двигательных навыков.',
+                '2': 'Для младших школьников. Упражнения направлены на развитие силы, выносливости и ловкости.',
+                '3': 'Для учащихся 5-6 классов. Программа включает более сложные упражнения, подготавливающие к подростковому возрасту.',
+                '4': 'Для подростков 13-15 лет. Интенсивные тренировки с учетом активного роста организма.',
+                '5': 'Для старшеклассников. Программа максимально приближена к взрослым нормативам.',
+                '6': 'Для молодых взрослых. Самые требовательные нормативы, соответствующие пику физической формы.',
+                '7': 'Для людей 30-39 лет. Учитывается постепенное снижение метаболизма и необходимость поддерживающих тренировок.',
+                '8': 'Для людей 40-49 лет. Акцент на поддержание здоровья и профилактику возрастных изменений.',
+                '9': 'Для людей 50-59 лет. Упражнения адаптированы с учетом возрастных особенностей.',
+                '10': 'Для людей 60-69 лет. Программа направлена на поддержание активности и мобильности.',
+                '11': 'Для людей 70 лет и старше. Особые упражнения для поддержания здоровья и самостоятельности.'
+            };
+            
+            return descriptions[level] || '';
+        }
+        
+        function getWorkoutsForLevel(level, gender) {
+            const baseWorkouts = [
+                {
+                    title: 'Утренняя зарядка',
+                    icon: 'sun',
+                    color: 'yellow',
+                    description: 'Комплекс упражнений для пробуждения организма и подготовки к дневной активности.',
+                    exercises: ['Наклоны головы', 'Вращения руками', 'Наклоны туловища', 'Приседания', 'Прыжки на месте'],
+                    duration: '10-15 минут',
+                    frequency: 'Ежедневно'
+                },
+                {
+                    title: 'Развитие гибкости',
+                    icon: 'spa',
+                    color: 'green',
+                    description: 'Упражнения на растяжку и улучшение подвижности суставов.',
+                    exercises: ['Наклоны вперед', 'Растяжка ног', 'Мостик', 'Шпагат', 'Вращения корпусом'],
+                    duration: '15-20 минут',
+                    frequency: '3-4 раза в неделю'
+                }
+            ];
+            
+            const levelWorkouts = {
+                '1': [
+                    {
+                        title: 'Игровые упражнения',
+                        icon: 'gamepad',
+                        color: 'blue',
+                        description: 'Развитие координации и ловкости через игровые формы.',
+                        exercises: ['Догонялки', 'Прыжки через скакалку', 'Игры с мячом', 'Полоса препятствий'],
+                        duration: '20-30 минут',
+                        frequency: '2-3 раза в неделю'
+                    }
+                ],
+                '2': [
+                    {
+                        title: 'Базовые силовые',
+                        icon: 'dumbbell',
+                        color: 'red',
+                        description: 'Простые силовые упражнения с собственным весом.',
+                        exercises: ['Отжимания (с колен)', 'Подтягивания (с поддержкой)', 'Приседания', 'Планка'],
+                        duration: '15-20 минут',
+                        frequency: '2 раза в неделю'
+                    }
+                ],
+                '3': [
+                    {
+                        title: 'Подготовка к нормативам',
+                        icon: 'medal',
+                        color: 'purple',
+                        description: 'Упражнения, направленные на выполнение нормативов ГТО.',
+                        exercises: ['Бег на короткие дистанции', 'Прыжки в длину', 'Метание мяча', 'Подтягивания/Отжимания'],
+                        duration: '30 минут',
+                        frequency: '3 раза в неделю'
+                    }
+                ],
+                '4': [
+                    {
+                        title: 'Интенсивный бег',
+                        icon: 'running',
+                        color: 'indigo',
+                        description: 'Тренировка выносливости и скорости для подростков.',
+                        exercises: ['Интервальный бег', 'Бег на 1-2 км', 'Спринты 60-100 м', 'Челночный бег'],
+                        duration: '30-40 минут',
+                        frequency: '2-3 раза в неделю'
+                    }
+                ],
+                '5': [
+                    {
+                        title: 'Силовая подготовка',
+                        icon: 'weight-hanging',
+                        color: 'orange',
+                        description: 'Упражнения с отягощениями для развития силы.',
+                        exercises: ['Приседания с весом', 'Жим лежа', 'Становая тяга', 'Подтягивания с весом'],
+                        duration: '40-50 минут',
+                        frequency: '3 раза в неделю'
+                    }
+                ],
+                '6': [
+                    {
+                        title: 'Кроссфит тренировка',
+                        icon: 'fire',
+                        color: 'red',
+                        description: 'Высокоинтенсивные функциональные тренировки.',
+                        exercises: ['Берпи', 'Становая тяга', 'Подтягивания', 'Бег 400 м', 'Приседания со штангой'],
+                        duration: '45-60 минут',
+                        frequency: '3-4 раза в неделю'
+                    }
+                ],
+                '7': [
+                    {
+                        title: 'Функциональный тренинг',
+                        icon: 'heartbeat',
+                        color: 'pink',
+                        description: 'Упражнения для поддержания функциональных возможностей.',
+                        exercises: ['Приседания', 'Отжимания', 'Подтягивания', 'Планка', 'Бег 2-3 км'],
+                        duration: '30-40 минут',
+                        frequency: '3 раза в неделю'
+                    }
+                ],
+                '8': [
+                    {
+                        title: 'Оздоровительная гимнастика',
+                        icon: 'hands-helping',
+                        color: 'teal',
+                        description: 'Упражнения для поддержания здоровья суставов и позвоночника.',
+                        exercises: ['Суставная гимнастика', 'Упражнения с резиной', 'Ходьба', 'Плавание'],
+                        duration: '30 минут',
+                        frequency: '4-5 раз в неделю'
+                    }
+                ],
+                '9': [
+                    {
+                        title: 'Скандинавская ходьба',
+                        icon: 'walking',
+                        color: 'blue',
+                        description: 'Идеальный вид активности для поддержания здоровья.',
+                        exercises: ['Разминка', 'Ходьба с палками', 'Дыхательные упражнения', 'Растяжка'],
+                        duration: '40-60 минут',
+                        frequency: '3-5 раз в неделю'
+                    }
+                ],
+                '10': [
+                    {
+                        title: 'Суставная гимнастика',
+                        icon: 'bone',
+                        color: 'gray',
+                        description: 'Мягкие упражнения для поддержания подвижности суставов.',
+                        exercises: ['Вращения суставов', 'Медленные наклоны', 'Дыхательные практики', 'Ходьба на месте'],
+                        duration: '20-30 минут',
+                        frequency: 'Ежедневно'
+                    }
+                ],
+                '11': [
+                    {
+                        title: 'Дыхательные практики',
+                        icon: 'wind',
+                        color: 'green',
+                        description: 'Упражнения для поддержания здоровья дыхательной системы.',
+                        exercises: ['Глубокое дыхание', 'Дыхание животом', 'Ходьба', 'Медленные наклоны'],
+                        duration: '15-20 минут',
+                        frequency: 'Ежедневно'
+                    }
+                ]
+            };
+            
+            if (gender === 'female') {
+                levelWorkouts['6'].push({
+                    title: 'Пилатес и растяжка',
+                    icon: 'spa',
+                    color: 'purple',
+                    description: 'Упражнения для развития гибкости и женского здоровья.',
+                    exercises: ['Упражнения на коврике', 'Растяжка', 'Дыхательные практики', 'Упражнения с резиной'],
+                    duration: '40 минут',
+                    frequency: '2-3 раза в неделю'
+                });
+            } else if (gender === 'male') {
+                levelWorkouts['6'].push({
+                    title: 'Силовая выносливость',
+                    icon: 'dumbbell',
+                    color: 'orange',
+                    description: 'Упражнения для развития силовой выносливости.',
+                    exercises: ['Подтягивания', 'Отжимания на брусьях', 'Приседания с весом', 'Жим лежа'],
+                    duration: '45 минут',
+                    frequency: '3 раза в неделю'
+                });
+            }
+            
+            return [...baseWorkouts, ...(levelWorkouts[level] || [])];
+        }
+        
+        function generateWorkouts() {
+            if (!selectedGender) {
+                alert('Пожалуйста, выберите ваш пол');
+                return;
+            }
+            
+            if (!selectedAge || selectedAge < 6 || selectedAge > 100) {
+                alert('Пожалуйста, введите корректный возраст (от 6 до 100 лет)');
+                return;
+            }
+            
+            if (!selectedLevel) {
+                alert('Пожалуйста, выберите ступень ГТО');
+                return;
+            }
+            
+            resultLevel.textContent = getLevelName(selectedLevel);
+            resultDescription.textContent = getLevelDescription(selectedLevel, selectedGender);
+            
+            const workouts = getWorkoutsForLevel(selectedLevel, selectedGender);
+            
+            workoutsContainer.innerHTML = '';
+            
+            workouts.forEach((workout, index) => {
+                const workoutCard = document.createElement('div');
+                workoutCard.className = 'bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition';
+                workoutCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-${workout.color}-100 w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-${workout.icon} text-${workout.color}-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">${workout.title}</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">${workout.description}</p>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 mb-2">Упражнения:</h4>
+                            <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                ${workout.exercises.map(ex => `<li>${ex}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span><i class="far fa-clock mr-1"></i> ${workout.duration}</span>
+                            <span><i class="fas fa-sync-alt mr-1"></i> ${workout.frequency}</span>
+                        </div>
+                    </div>
+                `;
+                workoutsContainer.appendChild(workoutCard);
+            });
+            
+            resultsSection.classList.remove('hidden');
+            setTimeout(() => {
+                resultsSection.classList.add('fade-in');
+            }, 10);
+            
+            let progress = 0;
+            const targetProgress = 100;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress >= targetProgress) {
+                    clearInterval(interval);
+                    progress = targetProgress;
+                }
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            }, 20);
+            
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+        }
+    </script>
+</body>
+</html>
